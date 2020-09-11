@@ -1072,8 +1072,8 @@ function CYIVideojsVideoPlayer(configuration) {
     self.nickname = null;
     self.container = null;
     self.video = null;
-    self.verbose = true; // TODO: CYIUtilities.isObjectStrict(configuration) ? CYIUtilities.parseBoolean(configuration.verbose, false) : false;
-    self.verboseStateChanges = true; // TODO: false
+    self.verbose = CYIUtilities.isObjectStrict(configuration) ? CYIUtilities.parseBoolean(configuration.verbose, false) : false;
+    self.verboseStateChanges = false;
     self.streamFormat = null;
     self.currentDurationSeconds = null;
     self.initialAudioBitrateKbps = null;
@@ -1170,7 +1170,15 @@ CYIVideojsVideoPlayer.generateAudioTrackTitle = function generateAudioTrackTitle
 
     addToTrack = CYIUtilities.parseBoolean(addToTrack, true);
 
-    var audioTrackTitle = audioTrack.language;
+    var audioTrackTitle = audioTrack.label;
+
+    if(CYIUtilities.isEmptyString(audioTrackTitle)) {
+        audioTrackTitle = audioTrack.language;
+    }
+
+    if(CYIUtilities.isEmptyString(audioTrackTitle)) {
+        audioTrackTitle = audioTrack.id.toString();
+    }
 
     if(addToTrack) {
         audioTrack.title = audioTrackTitle;
@@ -1190,6 +1198,10 @@ CYIVideojsVideoPlayer.generateTextTrackTitle = function generateTextTrackTitle(t
 
     if(CYIUtilities.isEmptyString(textTrackTitle)) {
         textTrackTitle = textTrack.language;
+    }
+
+    if(CYIUtilities.isEmptyString(textTrackTitle)) {
+        textTrackTitle = textTrack.id.toString();
     }
 
     if(addToTrack) {
@@ -1223,7 +1235,7 @@ CYIVideojsVideoPlayer.prototype.initialize = function initialize(name) {
             console.log(CYIVideojsVideoPlayer.getType() + " player already initialized!");
         }
 
-        return;
+        return false;
     }
 
     if(CYIUtilities.isValid(name)) {
@@ -1418,6 +1430,8 @@ CYIVideojsVideoPlayer.prototype.initialize = function initialize(name) {
             console.log(self.getDisplayName() + " initialized successfully!");
         }
     });
+
+    return true;
 };
 
 CYIVideojsVideoPlayer.prototype.checkInitialized = function checkInitialized() {
@@ -3102,14 +3116,6 @@ Object.defineProperty(CYIVideojsVideoPlayer, "FormatMimeTypes", {
 
 Object.defineProperty(CYIVideojsVideoPlayer, "TextTrackDisplayClassName", {
     value: "vjs-text-track-display",
-    enumerable: true
-});
-
-Object.defineProperty(CYIVideojsVideoPlayer, "DefaultVideoPlayerFileNames", {
-    value: [
-        "video.js",
-        "videojs-contrib-eme.js"
-    ],
     enumerable: true
 });
 
