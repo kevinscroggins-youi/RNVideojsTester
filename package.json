@@ -7,7 +7,7 @@
 	},
 	"dependencies": {
 		"@babel/core": "7.0.0",
-		"@youi/react-native-youi": "5.13.0",
+		"@youi/react-native-youi": "5.17.0",
 		"babel-preset-react-native": "4.0.0",
 		"metro-react-native-babel-preset": "^0.45.0",
 		"react": "16.6.3",

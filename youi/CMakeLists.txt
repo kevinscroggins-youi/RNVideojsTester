@@ -221,6 +221,9 @@ endforeach()
 include(Modules/YiConfigureInstrumentedBuild)
 yi_configure_instrumented_build(TARGET ${PROJECT_NAME})
 
+include(Modules/YiConfigureLogging)
+yi_configure_logging(TARGET ${PROJECT_NAME})
+
 # === END OF OPTION HANDLING ==================================================
 
 # === START OF COMPILER SETUP =================================================
