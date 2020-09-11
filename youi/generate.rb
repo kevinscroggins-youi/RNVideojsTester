@@ -8,14 +8,15 @@ require 'json'
 require 'socket'
 
 def GetIpAddress()
-    ip = "localhost"
+    ip = "127.0.0.1"
 
     begin
-        TCPSocket.open('www.youi.tv',80) do |sock|
+        TCPSocket.open('www.youi.tv', 80) do |sock|
             ip = sock.addr[3]
         end
     rescue
         puts "Unable to open socket, using localhost as default ip"
+        puts "Unable to open socket, using 127.0.0.1 (localhost) as default IP address"
     end
 
     return ip
@@ -26,7 +27,7 @@ class GenerateOptions
         options = OpenStruct.new
         options.platform = nil
         options.build_directory = nil
-        options.defines = {}
+        options.defines = { "YI_LOCAL_IP_ADDRESS" => GetIpAddress() }
         options.url_scheme = nil
 
         options.engine_hint = nil
