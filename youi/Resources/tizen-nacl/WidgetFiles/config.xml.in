@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<widget xmlns="http://www.w3.org/ns/widgets" xmlns:tizen="http://tizen.org/ns/widgets" height="1080" id="@YI_COMPANY_URL@" version="@YI_VERSION_NUMBER@" viewmodes="maximized" width="1920">
+    <tizen:profile name="tv"/>
+    <tizen:content-security-policy>*</tizen:content-security-policy>
+    
+    <tizen:setting pointing-device-support="enable"/>
+    <tizen:metadata key="http://samsung.com/tv/metadata/devel.api.version" value="2.4"/>
+    <tizen:metadata key="http://samsung.com/tv/metadata/voice.support" value="false"/>
+    <tizen:metadata key="http://samsung.com/tv/metadata/multiscreen.support" value="true"/>
+    <tizen:metadata key="http://samsung.com/tv/metadata/multitasking.support" value="true"/> 
+    <tizen:metadata key="http://samsung.com/tv/metadata/use.preview" value="endpoint_URL=@YI_SMART_HUB_PREVIEW_URL@"></tizen:metadata>
+    <tizen:privilege name="http://tizen.org/privilege/unlimitedstorage"/>
+    <tizen:privilege name="http://tizen.org/privilege/filesystem.read"/>
+    <tizen:privilege name="http://tizen.org/privilege/filesystem.write"/>
+    <tizen:privilege name="http://developer.samsung.com/privilege/network.public"/>
+    <tizen:privilege name="http://developer.samsung.com/privilege/productinfo"/>
+    <tizen:privilege name="http://tizen.org/privilege/tv.inputdevice"/>
+    <tizen:privilege name="http://developer.samsung.com/privilege/avplay"/>
+    <tizen:privilege name="http://developer.samsung.com/privilege/drmplay"/>
+    <tizen:privilege name="http://tizen.org/privilege/socket"/>
+    <tizen:privilege name="http://tizen.org/privilege/tv.audio"/>
+    <tizen:setting accelerated-2d-canvas="enable"/>
+
+    <tizen:app-control>
+        <tizen:src name="index.html" reload="disable"></tizen:src>
+        <tizen:operation name="http://samsung.com/appcontrol/operation/eden_resume"></tizen:operation>
+    </tizen:app-control>
+    
+    <access origin="*" subdomains="true"/>
+    <feature name="http://tizen.org/feature/screen.size.all"/>
+    
+    <name>@YI_DISPLAY_NAME@</name>
+    <author>@YI_AUTHOR_NAME@</author>
+    <description>@YI_DESCRIPTION@</description>
+    <tizen:application id="@YI_PACKAGE_ID@.@YI_PROJECT_NAME_LOWER@" package="@YI_PACKAGE_ID@" required_version="2.3"/>
+    <content src="index.html"/>
+    <icon src="resources/icon128.png"/>
+</widget>
