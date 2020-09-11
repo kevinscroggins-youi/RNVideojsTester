@@ -1009,6 +1009,23 @@ function CYIVideojsVideoPlayer(configuration) {
         }
     });
 
+    Object.defineProperty(self, "adContainer", {
+        enumerable: true,
+        get() {
+            return _properties.adContainer;
+        },
+        set(value) {
+            if(value instanceof HTMLElement) {
+                _properties.adContainer = value;
+
+                self.updateAdContainer();
+            }
+            else {
+                _properties.adContainer = null;
+            }
+        }
+    });
+
     Object.defineProperty(self, "buffering", {
         enumerable: true,
         get() {
@@ -1084,6 +1101,7 @@ function CYIVideojsVideoPlayer(configuration) {
     self.currentTotalBitrateKbps = null;
     self.shouldResumePlayback = null;
     self.player = null;
+    self.adContainer = null;
     self.requestedTextTrackId = null;
     self.requestedSeekTimeSeconds = NaN;
     self.buffering = false;
@@ -1604,6 +1622,19 @@ CYIVideojsVideoPlayer.prototype.setVideoRectangle = function setVideoRectangle(x
     }
 
     self.requestedVideoRectangle = null;
+    self.updateAdContainer();
+};
+
+CYIVideojsVideoPlayer.prototype.updateAdContainer = function updateAdContainer() {
+    var self = this;
+
+    if(CYIUtilities.isValid(self.adContainer)) {
+        self.adContainer.style.position = self.container.style.position;
+        self.adContainer.style.left = "0px";
+        self.adContainer.style.top = "0px";
+        self.adContainer.style.width = self.container.style.width;
+        self.adContainer.style.height = self.container.style.height;
+    }
 };
 
 CYIVideojsVideoPlayer.prototype.hideUI = function hideUI() {
@@ -1700,7 +1731,7 @@ CYIVideojsVideoPlayer.prototype.configureDRM = function configureDRM(drmConfigur
     }
 };
 
-CYIVideojsVideoPlayer.prototype.prepare = function prepare(url, format, startTimeSeconds, maxBitrateKbps, drmConfiguration) {
+CYIVideojsVideoPlayer.prototype.prepare = function prepare(url, format, startTimeSeconds, maxBitrateKbps, drmConfiguration, extra) {
     var self = this;
 
     self.checkInitialized();
@@ -1712,6 +1743,7 @@ CYIVideojsVideoPlayer.prototype.prepare = function prepare(url, format, startTim
         startTimeSeconds = data.startTimeSeconds;
         maxBitrateKbps = data.maxBitrateKbps;
         drmConfiguration = data.drmConfiguration;
+        extra = data.extra;
     }
 
     if(!self.isStreamFormatSupported(format, CYIUtilities.isObjectStrict(drmConfiguration) ? drmConfiguration.type : null)) {
@@ -1761,6 +1793,16 @@ CYIVideojsVideoPlayer.prototype.prepare = function prepare(url, format, startTim
 
     if(startTimeSeconds > 0) {
         self.player.currentTime(startTimeSeconds);
+    }
+
+    if(CYIUtilities.isObjectStrict(extra) && CYIUtilities.isNonEmptyString(extra.adTagUrl)) {
+        // initialize the Google IMA Video.js plugin
+        self.player.ima({
+            adTagUrl: extra.adTagUrl
+        });
+
+        // obtain the ad container element
+        self.adContainer = self.container.getElementsByClassName(CYIVideojsVideoPlayer.AdContainerClassName)[0];
     }
 
     self.player.src(sourceConfiguration);
@@ -1946,6 +1988,7 @@ CYIVideojsVideoPlayer.prototype.destroy = function destroy() {
     self.initialized = false;
     self.video = null;
     self.container = null;
+    self.adContainer = null;
 
     if(self.verbose) {
         console.log(self.getDisplayName() + " disposed.");
@@ -3116,6 +3159,11 @@ Object.defineProperty(CYIVideojsVideoPlayer, "FormatMimeTypes", {
 
 Object.defineProperty(CYIVideojsVideoPlayer, "TextTrackDisplayClassName", {
     value: "vjs-text-track-display",
+    enumerable: true
+});
+
+Object.defineProperty(CYIVideojsVideoPlayer, "AdContainerClassName", {
+    value: "ima-ad-container",
     enumerable: true
 });
 

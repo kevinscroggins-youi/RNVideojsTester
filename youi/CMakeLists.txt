@@ -274,6 +274,8 @@ if(TIZEN_NACL)
     list(APPEND YI_USER_TIZEN_JS_FILES "YiPlatformUtilities.js")
     list(APPEND YI_USER_TIZEN_JS_FILES "video.js")
     list(APPEND YI_USER_TIZEN_JS_FILES "videojs-contrib-eme.js")
+    list(APPEND YI_USER_TIZEN_JS_FILES "videojs-contrib-ads.js")
+    list(APPEND YI_USER_TIZEN_JS_FILES "videojs.ima.js")
     list(APPEND YI_USER_TIZEN_JS_FILES "YiVideojsVideoPlayer.js")
 endif()
 
