@@ -7,16 +7,15 @@
 	},
 	"dependencies": {
 		"@babel/core": "7.0.0",
-		"@youi/react-native-youi": "5.18.0",
+		"@babel/runtime": "^7.6.2",
+		"@youi/react-native-youi": "6.0.0-preview",
 		"babel-preset-react-native": "4.0.0",
 		"metro-react-native-babel-preset": "^0.45.0",
-		"react": "16.6.3",
-		"react-native": "0.58.6"
+		"react": "16.8.6",
+		"react-native": "0.60.6"
 	},
 	"devDependencies": {
-		"babel-preset-env": "^1.7.0",
-		"babel-preset-react": "^6.24.1",
-		"babel-register": "^6.26.0",
+		"@youi/babel-plugin-react-native-youi": "^1.0.4",
 		"jest": "^24.0.0",
 		"react-test-renderer": "^16.6.3"
 	},
