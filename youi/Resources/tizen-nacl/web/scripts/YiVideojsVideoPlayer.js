@@ -731,6 +731,20 @@ function CYIVideojsVideoPlayerProperties() {
         }
     });
 
+    Object.defineProperty(self, "dependenciesLoaded", {
+        enumerable: true,
+        get() {
+            return _properties.dependenciesLoaded;
+        },
+        set(value) {
+            var newValue = CYIUtilities.parseBoolean(value);
+
+            if(newValue !== null) {
+                _properties.dependenciesLoaded = newValue;
+            }
+        }
+    });
+
     Object.defineProperty(self, "playerVersion", {
         enumerable: true,
         get() {
@@ -1181,6 +1195,62 @@ CYIVideojsVideoPlayer.getVersionData = function getVersionData() {
     return CYIVideojsVideoPlayer.playerVersion;
 };
 
+CYIVideojsVideoPlayer.loadDependencies = function loadDependencies(options, callback) {
+    if(CYIUtilities.isFunction(options)) {
+        callback = options;
+        options = null;
+    }
+
+    if(!CYIUtilities.isFunction(callback)) {
+        throw CYIUtilities.createError("Missing or invalid callback function!");
+    }
+
+    if(CYIVideojsVideoPlayer.dependenciesLoaded) {
+        return callback();
+    }
+
+    if(!CYIUtilities.isObjectStrict(options)) {
+        options = { };
+    }
+
+    var verbose = CYIUtilities.parseBoolean(options.verbose, false);
+
+    var filePaths = CYIVideojsVideoPlayer.DefaultVideoPlayerFileNames;
+
+    if(CYIUtilities.isNonEmptyString(options.filePaths)) {
+        filePaths = [options.filePaths];
+    }
+    else if(CYIUtilities.isNonEmptyArray(options.filePaths)) {
+        filePaths = options.filePaths;
+    }
+
+    if(CYIUtilities.isNonEmptyString(options.filePaths)) {
+        filePaths = [options.filePaths];
+    }
+
+    for(var i = 0; i < filePaths.length; i++) {
+        if(CYIUtilities.isEmptyString(filePaths[i])) {
+            throw CYIUtilities.createError(CYIVideojsVideoPlayer.name + " dependency loading called with an invalid video player file path at index " + i + ".");
+        }
+    }
+
+    return CYIWebFileLoader.getInstance().loadFiles(
+        filePaths,
+        {
+            verbose: verbose
+        },
+        function(error) {
+            if(error) {
+                return callback(error);
+            }
+
+            CYIVideojsVideoPlayer.dependenciesLoaded = true;
+
+            return callback();
+        }
+    );
+};
+
 CYIVideojsVideoPlayer.generateAudioTrackTitle = function generateAudioTrackTitle(audioTrack, addToTrack) {
     if(!CYIUtilities.isObjectStrict(audioTrack)) {
         return null;
@@ -1232,224 +1302,235 @@ CYIVideojsVideoPlayer.generateTextTrackTitle = function generateTextTrackTitle(t
 CYIVideojsVideoPlayer.prototype.initialize = function initialize(name) {
     var self = this;
 
-    if(self.state !== CYIVideojsVideoPlayer.State.Uninitialized) {
-        throw CYIUtilities.createError(CYIVideojsVideoPlayer.getType() + " player is already initialized!");
-    }
+    return new Promise(function(resolve, reject) {
+console.error("@@@ USING PROMISE!");
 
-    if(CYIPlatformUtilities.isEmbedded) {
-        throw CYIUtilities.createError(CYIVideojsVideoPlayer.getType() + " is not supported on embedded platforms!");
-    }
-
-    if(typeof videojs === "undefined") {
-        throw CYIUtilities.createError(CYIVideojsVideoPlayer.getType() + " player is not loaded yet!");
-    }
-
-    if(self.verbose) {
-        console.log("Initializing " + CYIVideojsVideoPlayer.getType() + " player...");
-    }
-
-    if(self.player) {
-        if(self.verbose) {
-            console.log(CYIVideojsVideoPlayer.getType() + " player already initialized!");
+        if(self.state !== CYIVideojsVideoPlayer.State.Uninitialized) {
+            throw CYIUtilities.createError(CYIVideojsVideoPlayer.getType() + " player is already initialized!");
         }
 
-        return false;
-    }
+        return CYIVideojsVideoPlayer.loadDependencies(
+            {
+                verbose: self.verbose
+            },
+            function(error) {
+                if(error) {
+                    return reject(error);
+                }
 
-    if(CYIUtilities.isValid(name)) {
-        self.setNickname(name);
-    }
+                if(typeof videojs === "undefined") {
+                    throw CYIUtilities.createError(CYIVideojsVideoPlayer.getType() + " player is not loaded yet!");
+                }
 
-    self.video = document.createElement("video");
-    self.video.classList.add("videojs_player");
-    self.video.id = "videojs_player";
+                if(self.verbose) {
+                    console.log("Initializing " + CYIVideojsVideoPlayer.getType() + " player...");
+                }
 
-    if(!CYIPlatformUtilities.isEmbedded) {
-        self.video.style.width = "100%";
-        self.video.style.height = "100%";
-    }
+                if(self.player) {
+                    if(self.verbose) {
+                        console.log(CYIVideojsVideoPlayer.getType() + " player already initialized!");
+                    }
 
-    document.body.appendChild(self.video);
+                    return resolve();
+                }
 
-    self.player = videojs(self.video.id, {
-        controls: false,
-        autoplay: false,
-        loadingSpinner: false,
-        html5: {
-            nativeTextTracks: false,
-            nativeAudioTracks: true,
-            nativeVideoTracks: false,
-            hls: { // applies to DASH as well
-                overrideNative: true
+                if(CYIUtilities.isValid(name)) {
+                    self.setNickname(name);
+                }
+
+                self.video = document.createElement("video");
+                self.video.classList.add("videojs_player");
+                self.video.id = "videojs_player";
+
+                if(!CYIPlatformUtilities.isEmbedded) {
+                    self.video.style.width = "100%";
+                    self.video.style.height = "100%";
+                }
+
+                document.body.appendChild(self.video);
+
+                self.player = videojs(self.video.id, {
+                    controls: false,
+                    autoplay: false,
+                    loadingSpinner: false,
+                    html5: {
+                        nativeTextTracks: false,
+                        nativeAudioTracks: true,
+                        nativeVideoTracks: false,
+                        hls: { // applies to DASH as well
+                            overrideNative: true
+                        }
+                    }
+                });
+
+                // obtain the new parent container element
+                self.container = self.video.parentElement;
+
+                if(!CYIPlatformUtilities.isEmbedded) {
+                    self.container.style.visibility = "hidden";
+                    self.container.zIndex = 50;
+
+                    self.hideUI();
+                }
+
+                if(self.verbose) {
+                    self.player.log.level("debug");
+                }
+
+                self.player.on("ready", function onReadyEvent() {
+                    if(self.verbose) {
+                        console.log(self.getDisplayName() + " is ready.");
+                    }
+
+                    self.video = self.player.el().getElementsByTagName("video")[0];
+                });
+
+                self.player.on("loadeddata", function onLoadedDataEvent() {
+                    if(self.verbose) {
+                        console.log(self.getDisplayName() + " loaded initial data.");
+                    }
+
+                    self.notifyLiveStatus();
+
+                    if(Number.isInteger(self.requestedSeekTimeSeconds)) {
+                        if(self.verbose) {
+                            console.log(self.getDisplayName() + " processing delayed seek request.");
+                        }
+
+                        var requestedSeekTimeSeconds = self.requestedSeekTimeSeconds;
+
+                        self.requestedSeekTimeSeconds = NaN;
+
+                        self.seek(requestedSeekTimeSeconds);
+                    }
+                });
+
+                self.player.on("error", function onErrorEvent(event) {
+                    self.stop();
+
+                    var error = CYIUtilities.createError(self.player.error().message);
+                    error.code = self.player.error().code;
+                    error.originalMessage = error.message;
+                    error.message = self.getDisplayName() + " encountered an unexpected error: " + error.originalMessage;
+
+                    return self.sendErrorEvent("playerError", error);
+                });
+
+                self.player.on("waiting", function onBufferingStartedEvent(event) {
+                    if(!self.loaded || self.buffering) {
+                        return;
+                    }
+
+                    self.buffering = true;
+
+                    self.notifyBufferingStateChanged(true);
+                });
+
+                self.player.on("canplay", function onBufferingStartedEvent(event) {
+                    if(!self.loaded || !self.buffering) {
+                        return;
+                    }
+
+                    self.buffering = false;
+
+                    self.notifyBufferingStateChanged(false);
+                });
+
+                self.player.audioTracks().on("addtrack", function onAudioTrackAddedEvent(event) {
+                    self.notifyAudioTracksChanged();
+                });
+
+                self.player.audioTracks().on("removetrack", function onAudioTrackRemovedEvent(event) {
+                    self.notifyAudioTracksChanged();
+                });
+
+                self.player.audioTracks().on("change", function onAudioTrackChangedEvent(event) {
+                    self.notifyActiveAudioTrackChanged();
+                });
+
+                self.player.textTracks().on("addtrack", function onTextTrackAddedEvent(event) {
+                    self.notifyTextTracksChanged();
+                });
+
+                self.player.textTracks().on("removetrack", function onTextTrackRemovedEvent(event) {
+                    self.notifyTextTracksChanged();
+                });
+
+                self.player.textTracks().on("change", function onTextTrackChangedEvent(event) {
+                    self.notifyActiveTextTrackChanged();
+                });
+
+                self.player.textTracks().on("addtrack", function(event) {
+                    var textTracks = self.player.textTracks();
+                    var metadataTextTrack = textTracks[textTracks.length - 1];
+
+                    if(CYIUtilities.isInvalid(metadataTextTrack) || metadataTextTrack.kind !== "metadata") {
+                        return;
+                    }
+
+                    if(self.verbose) {
+                        console.log("Metadata text track detected, adding cue change listener to monitor for timed metadata events.");
+                    }
+
+                    metadataTextTrack.on("cuechange", function(event) {
+                        if(metadataTextTrack.activeCues.length === 0) {
+                            return;
+                        }
+
+                        var activeCue = metadataTextTrack.activeCues[metadataTextTrack.activeCues.length - 1];
+
+                        if(CYIUtilities.isEmptyString(activeCue.value.key) || activeCue.value.key === "PRIV") {
+                            return;
+                        }
+
+                        self.notifyMetadataAvailable({
+                            identifier: activeCue.value.key,
+                            value: activeCue.value.data,
+                            timestamp: new Date(),
+                            durationMs: (activeCue.endTime - activeCue.startTime) * 1000
+                        });
+                    });
+                });
+
+                self.player.on("ended", function onVideoEndedEvent(event) {
+                    // hack to fix multiple ended events being emitted on tizen
+                    if(self.state === CYIVideojsVideoPlayer.State.Complete) {
+                        return;
+                    }
+
+                    self.updateState(CYIVideojsVideoPlayer.State.Complete);
+                });
+
+                self.player.on("timeupdate", function onTimeUpdateEvent(event) {
+                    if(!self.player) {
+                        return;
+                    }
+
+                    self.notifyVideoTimeChanged();
+                });
+
+                self.player.on("durationchange", function onDurationChangedEvent(event) {
+                    if(!self.player) {
+                        return;
+                    }
+
+                    self.notifyVideoDurationChanged();
+                });
+
+                self.player.ready(function() {
+                    self.initialized = true;
+
+                    self.updateState(CYIVideojsVideoPlayer.State.Initialized);
+
+                    if(self.verbose) {
+                        console.log(self.getDisplayName() + " initialized successfully!");
+                    }
+                });
+
+                return resolve();
             }
-        }
+        );
     });
-
-    // obtain the new parent container element
-    self.container = self.video.parentElement;
-
-    if(!CYIPlatformUtilities.isEmbedded) {
-        self.container.style.visibility = "hidden";
-        self.container.zIndex = 50;
-
-        self.hideUI();
-    }
-
-    if(self.verbose) {
-        self.player.log.level("debug");
-    }
-
-    self.player.on("ready", function onReadyEvent() {
-        if(self.verbose) {
-            console.log(self.getDisplayName() + " is ready.");
-        }
-
-        self.video = self.player.el().getElementsByTagName("video")[0];
-    });
-
-    self.player.on("loadeddata", function onLoadedDataEvent() {
-        if(self.verbose) {
-            console.log(self.getDisplayName() + " loaded initial data.");
-        }
-
-        self.notifyLiveStatus();
-
-        if(Number.isInteger(self.requestedSeekTimeSeconds)) {
-            if(self.verbose) {
-                console.log(self.getDisplayName() + " processing delayed seek request.");
-            }
-
-            var requestedSeekTimeSeconds = self.requestedSeekTimeSeconds;
-
-            self.requestedSeekTimeSeconds = NaN;
-
-            self.seek(requestedSeekTimeSeconds);
-        }
-    });
-
-    self.player.on("error", function onErrorEvent(event) {
-        self.stop();
-
-        var error = CYIUtilities.createError(self.player.error().message);
-        error.code = self.player.error().code;
-        error.originalMessage = error.message;
-        error.message = self.getDisplayName() + " encountered an unexpected error: " + error.originalMessage;
-
-        return self.sendErrorEvent("playerError", error);
-    });
-
-    self.player.on("waiting", function onBufferingStartedEvent(event) {
-        if(!self.loaded || self.buffering) {
-            return;
-        }
-
-        self.buffering = true;
-
-        self.notifyBufferingStateChanged(true);
-    });
-
-    self.player.on("canplay", function onBufferingStartedEvent(event) {
-        if(!self.loaded || !self.buffering) {
-            return;
-        }
-
-        self.buffering = false;
-
-        self.notifyBufferingStateChanged(false);
-    });
-
-    self.player.audioTracks().on("addtrack", function onAudioTrackAddedEvent(event) {
-        self.notifyAudioTracksChanged();
-    });
-
-    self.player.audioTracks().on("removetrack", function onAudioTrackRemovedEvent(event) {
-        self.notifyAudioTracksChanged();
-    });
-
-    self.player.audioTracks().on("change", function onAudioTrackChangedEvent(event) {
-        self.notifyActiveAudioTrackChanged();
-    });
-
-    self.player.textTracks().on("addtrack", function onTextTrackAddedEvent(event) {
-        self.notifyTextTracksChanged();
-    });
-
-    self.player.textTracks().on("removetrack", function onTextTrackRemovedEvent(event) {
-        self.notifyTextTracksChanged();
-    });
-
-    self.player.textTracks().on("change", function onTextTrackChangedEvent(event) {
-        self.notifyActiveTextTrackChanged();
-    });
-
-    self.player.textTracks().on("addtrack", function(event) {
-        var textTracks = self.player.textTracks();
-        var metadataTextTrack = textTracks[textTracks.length - 1];
-
-        if(CYIUtilities.isInvalid(metadataTextTrack) || metadataTextTrack.kind !== "metadata") {
-            return;
-        }
-
-        if(self.verbose) {
-            console.log("Metadata text track detected, adding cue change listener to monitor for timed metadata events.");
-        }
-
-        metadataTextTrack.on("cuechange", function(event) {
-            if(metadataTextTrack.activeCues.length === 0) {
-                return;
-            }
-
-            var activeCue = metadataTextTrack.activeCues[metadataTextTrack.activeCues.length - 1];
-
-            if(CYIUtilities.isEmptyString(activeCue.value.key) || activeCue.value.key === "PRIV") {
-                return;
-            }
-
-            self.notifyMetadataAvailable({
-                identifier: activeCue.value.key,
-                value: activeCue.value.data,
-                timestamp: new Date(),
-                durationMs: (activeCue.endTime - activeCue.startTime) * 1000
-            });
-        });
-    });
-
-    self.player.on("ended", function onVideoEndedEvent(event) {
-        // hack to fix multiple ended events being emitted on tizen
-        if(self.state === CYIVideojsVideoPlayer.State.Complete) {
-            return;
-        }
-
-        self.updateState(CYIVideojsVideoPlayer.State.Complete);
-    });
-
-    self.player.on("timeupdate", function onTimeUpdateEvent(event) {
-        if(!self.player) {
-            return;
-        }
-
-        self.notifyVideoTimeChanged();
-    });
-
-    self.player.on("durationchange", function onDurationChangedEvent(event) {
-        if(!self.player) {
-            return;
-        }
-
-        self.notifyVideoDurationChanged();
-    });
-
-    self.player.ready(function() {
-        self.initialized = true;
-
-        self.updateState(CYIVideojsVideoPlayer.State.Initialized);
-
-        if(self.verbose) {
-            console.log(self.getDisplayName() + " initialized successfully!");
-        }
-    });
-
-    return true;
 };
 
 CYIVideojsVideoPlayer.prototype.checkInitialized = function checkInitialized() {
@@ -3167,6 +3248,17 @@ Object.defineProperty(CYIVideojsVideoPlayer, "AdContainerClassName", {
     enumerable: true
 });
 
+Object.defineProperty(CYIVideojsVideoPlayer, "DefaultVideoPlayerFileNames", {
+    value: [
+        "video.js",
+        "videojs-contrib-eme.js",
+        "http://imasdk.googleapis.com/js/sdkloader/ima3.js",
+        "videojs-contrib-ads.js",
+        "videojs.ima.js"
+    ],
+    enumerable: true
+});
+
 Object.defineProperty(CYIVideojsVideoPlayer, "instance", {
     enumerable: true,
     get() {
@@ -3184,6 +3276,16 @@ Object.defineProperty(CYIVideojsVideoPlayer, "script", {
     },
     set(value) {
         CYIVideojsVideoPlayer.properties.script = value;
+    }
+});
+
+Object.defineProperty(CYIVideojsVideoPlayer, "dependenciesLoaded", {
+    enumerable: true,
+    get() {
+        return CYIVideojsVideoPlayer.properties.dependenciesLoaded;
+    },
+    set(value) {
+        CYIVideojsVideoPlayer.properties.dependenciesLoaded = value;
     }
 });
 

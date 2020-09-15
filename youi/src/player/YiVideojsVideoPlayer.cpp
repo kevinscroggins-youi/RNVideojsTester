@@ -15,6 +15,7 @@ YI_TYPE_DEF(CYIVideojsVideoPlayer, CYIAbstractVideoPlayer);
 static const char *VIDEO_PLAYER_CLASS_NAME = "CYIVideojsVideoPlayer";
 static const char *VIDEO_PLAYER_INSTANCE_ACCESSOR_NAME = "getInstance";
 static const double BITRATE_KBPS_SCALE = 1000.0;
+static const uint64_t INITIALIZE_RESPONSE_TIMEOUT_MS = 3000;
 
 CYIString StreamFormatToString(CYIAbstractVideoPlayer::StreamingFormat streamFormat)
 {
@@ -228,7 +229,7 @@ void CYIVideojsVideoPlayerPriv::InitializePlayerInstance()
     YI_ASSERT(messageSent, LOG_TAG, "Failed to invoke %s function.", FUNCTION_NAME);
 
     bool valueAssigned = false;
-    CYIWebMessagingBridge::Response response = futureResponse.Take(CYIWebMessagingBridge::DEFAULT_RESPONSE_TIMEOUT_MS, &valueAssigned);
+    CYIWebMessagingBridge::Response response = futureResponse.Take(INITIALIZE_RESPONSE_TIMEOUT_MS, &valueAssigned);
 
     YI_ASSERT(valueAssigned, LOG_TAG, "Failed to initialize Video.js video player instance, no response received from web messaging bridge!");
     YI_ASSERT(!response.HasError(), LOG_TAG, "%s", response.GetError()->GetMessage().GetData());

@@ -3,6 +3,8 @@
     <tizen:profile name="tv"/>
     <tizen:content-security-policy>*</tizen:content-security-policy>
     
+    <tizen:allow-navigation>*</tizen:allow-navigation>
+
     <tizen:setting pointing-device-support="enable"/>
     <tizen:metadata key="http://samsung.com/tv/metadata/devel.api.version" value="2.4"/>
     <tizen:metadata key="http://samsung.com/tv/metadata/voice.support" value="false"/>
